@@ -1,1 +1,4 @@
-
+pandas
+spotipy
+bs4
+#-e
