@@ -15,7 +15,7 @@ load_dotenv()
 
 @dataclass
 class DataIngestionConfig:
-    raw_data_path: str=os.path.join('raw', 'taylor_swift_raw.csv')
+    raw_data_path: str=os.path.join('data', 'raw', 'taylor_swift_raw.csv')
 
 class DataIngestion:
     def __init__(self) -> None:
@@ -178,6 +178,10 @@ class DataIngestion:
 
             logging.info('Joined lyrics to audio features dataframe')
 
+            df.to_csv(self.ingestion_config.raw_data_path, index=False, header=True)
+
+            logging.info('Saved raw data')
+
             return df
         
         except Exception as e:
@@ -190,5 +194,5 @@ if __name__ == '__main__':
     ts_audiofeatures = obj.get_audio_features()
     # Get lyrics and join to ts_audiofeatures and store into ts_df
     ts_df = obj.lyrics_onto_frame(ts_audiofeatures, 'Taylor Swift')
-    
+
     print(ts_df.head())
