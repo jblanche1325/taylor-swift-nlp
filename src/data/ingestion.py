@@ -136,8 +136,59 @@ class DataIngestion:
         except Exception as e:
             raise CustomException(e, sys)
         
-if __name__ == '__main__':
-    obj = DataIngestion()
-    ts_audiofeatures = obj.get_audio_features()
+    def scrape_lyrics(self, artistname, songname):
+        '''
+        This function scrapes song lyrics from Genius.com 
+        using BeautifulSoup
+        '''
 
-    print(ts_audiofeatures.head())
+        try:
+            # Clean up artist and song names        
+            artistname2 = str(artistname.replace(' ','-')) if ' ' in artistname else str(artistname)
+            songname2 = str(songname.replace(' ','-')) if ' ' in songname else str(songname)
+            songname2 = str(songname2.replace('(','')) if '(' in songname2 else str(songname2)
+            songname2 = str(songname2.replace(')','')) if ')' in songname2 else str(songname2)
+            songname2 = str(songname2.replace("'",'')) if "'" in songname2 else str(songname2)
+            # Get html from page and find lyrics
+            page = requests.get('https://genius.com/'+ artistname2 + '-' + songname2 + '-' + 'lyrics')
+            html = BeautifulSoup(page.text, 'html.parser')
+            lyrics1 = html.find("div", class_="lyrics")
+            lyrics2 = html.find("div", class_="Lyrics__Container-sc-1ynbvzw-1 kUgSbL")
+            if lyrics1:
+                lyrics = lyrics1.get_text()
+            elif lyrics2:
+                lyrics = lyrics2.get_text()
+            elif lyrics1 == lyrics2 == None:
+                lyrics = None
+
+            return lyrics
+        
+        except Exception as e:
+            raise CustomException(e, sys)
+        
+    def lyrics_onto_frame(self, df, artist_name):
+        '''
+        This function uses scrape_lyrics() to loop through
+        each song and pull the lyrics into a dataframe.
+        '''
+        try:
+            for i, x in enumerate(df['name']):
+                test = self.scrape_lyrics(artist_name, x)
+                df.loc[i, 'lyrics'] = test
+
+            logging.info('Joined lyrics to audio features dataframe')
+
+            return df
+        
+        except Exception as e:
+            raise CustomException(e, sys)
+        
+if __name__ == '__main__':
+    # Initiate DataIngestion()
+    obj = DataIngestion()
+    # Get Audio Features and store into ts_audiofeatures
+    ts_audiofeatures = obj.get_audio_features()
+    # Get lyrics and join to ts_audiofeatures and store into ts_df
+    ts_df = obj.lyrics_onto_frame(ts_audiofeatures, 'Taylor Swift')
+    
+    print(ts_df.head())
